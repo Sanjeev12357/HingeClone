@@ -27,7 +27,7 @@ const Navbar = () => {
   }
 
   return (
-    <header className="bg-zinc-900 text-white shadow-md">
+    <header className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -38,9 +38,18 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8 text-sm font-medium">
-            <a href="#" className="hover:text-pink-300 transition">Discover</a>
-            <a href="#" className="hover:text-pink-300 transition">Messages</a>
-            <a href="#" className="hover:text-pink-300 transition">Profile</a>
+            <Link to="/" className="hover:text-pink-300">
+              Discover
+            </Link>
+            <Link to="/connections" className="hover:text-pink-300">
+              Connections
+            </Link>
+            <Link to="/requests" className="hover:text-pink-300">
+              Requests
+            </Link>
+            <Link to="/profile" className="hover:text-pink-300">
+              Profile
+            </Link>
           </nav>
 
           {/* User Info */}
