@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addFeed } from '../utils/feedSlice';
 import { Heart, Zap, User, MapPin, Calendar, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaRegObjectGroup } from 'react-icons/fa';
 
 export const Feed = () => {
   const dispatch = useDispatch();
@@ -31,14 +32,12 @@ export const Feed = () => {
   const profiles = feed || [];
   const current = profiles[index];
 
-  const handleAction = async (type) => {
+  const handleAction = async (status) => {
     // stubbed: replace with your real endpoints
     try {
-      if (type === 'interested') {
-        await axios.post(`${BASE_URL}/connection/request`, { toUserId: current._id }, { withCredentials: true });
-      } else if (type === 'like') {
-        await axios.post(`${BASE_URL}/user/like`, { userId: current._id }, { withCredentials: true });
-      }
+        const toUserId = current._id;
+        await axios.post(`${BASE_URL}/request/send/${status}/${toUserId}`, {  }, { withCredentials: true });
+      console.log(`Action ${status} performed on user ${current._id}`);
     } catch (e) {
       console.error('action error', e);
     } finally {
@@ -145,11 +144,11 @@ export const Feed = () => {
             {/* Action Buttons */}
             <div className="flex justify-between items-center pt-2">
               <button
-                onClick={() => handleAction('like')}
+                onClick={() => handleAction('ignored')}
                 className="flex-1 py-3 mr-2 bg-gray-900 hover:bg-gray-700 rounded-xl transition duration-300 flex items-center justify-center border border-gray-700"
               >
-                <Heart size={20} className="text-red-400 mr-2" />
-                <span className="text-gray-300 font-medium">Like</span>
+                <FaRegObjectGroup size={20} className="text-red-400 mr-2" />
+                <span className="text-gray-300 font-medium">Reject</span>
               </button>
               
               <button
