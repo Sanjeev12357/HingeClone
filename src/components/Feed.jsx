@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { BASE_URL } from '../utils/constants';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { addFeed } from '../utils/feedSlice';
+import { addFeed, removeFeed } from '../utils/feedSlice';
 import { Heart, Zap, User, MapPin, Calendar, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegObjectGroup } from 'react-icons/fa';
@@ -38,6 +38,8 @@ export const Feed = () => {
         const toUserId = current._id;
         await axios.post(`${BASE_URL}/request/send/${status}/${toUserId}`, {  }, { withCredentials: true });
       console.log(`Action ${status} performed on user ${current._id}`);
+      // Optionally, you can update the feed state here if needed
+      dispatch(removeFeed(current._id));
     } catch (e) {
       console.error('action error', e);
     } finally {

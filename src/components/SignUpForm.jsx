@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Camera, User, Mail, Lock, Calendar, Heart, Smile, CheckCircle, Loader2, X, Plus } from 'lucide-react';
 import axios from 'axios';
 import { BASE_URL } from '../utils/constants';
+import { Link } from 'react-router-dom';
 
 export default function SignupForm() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -653,6 +654,7 @@ export default function SignupForm() {
           </div>
         </form>
 
+
         {/* Fill demo data button */}
         <div className="mt-6 text-center">
           <button
@@ -663,6 +665,12 @@ export default function SignupForm() {
             Fill with demo data
           </button>
         </div>
+        <p className="text-center text-sm text-gray-400 mt-6">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-400 hover:underline">
+            Login
+          </Link>
+        </p>
       </motion.div>
     </div>
   );
