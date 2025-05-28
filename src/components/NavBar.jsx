@@ -50,6 +50,9 @@ const Navbar = () => {
             <Link to="/profile" className="hover:text-pink-300">
               Profile
             </Link>
+            <Link to="/premium" className="hover:text-pink-300">
+              Premium
+            </Link>
           </nav>
 
           {/* User Info */}
