@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BASE_URL } from '../utils/constants';
 
 const Premium = () => {
@@ -22,7 +22,9 @@ const Premium = () => {
   ];
 
   const [isPremium, setIsPremium] = React.useState(false);
-
+useEffect(()=>{
+    verifyPremiumUser();
+},[])
 const verifyPremiumUser=async()=>{
     const res=await axios.get(BASE_URL+"/premium/verify",{
         withCredentials:true

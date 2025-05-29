@@ -10,6 +10,7 @@ import SignupForm from './components/SignUpForm'
 import Connections from './components/Connections'
 import Requests from './components/Requests'
 import Premium from './components/Premium'
+import Chat from './components/Chat'
 
 function App() {
  
@@ -53,6 +54,10 @@ function App() {
           <Route
           path="/premium"
           element={<Premium/>}
+          />
+          <Route
+          path="/chat/:connectionId"
+          element={<Chat/>}
           />
           </Route>
         </Routes>

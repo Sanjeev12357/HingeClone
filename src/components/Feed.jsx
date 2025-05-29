@@ -12,6 +12,7 @@ export const Feed = () => {
   const feed = useSelector(store => store.feed);
   const [index, setIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+ 
 
   // fetch once
   const getFeed = useCallback(async () => {
