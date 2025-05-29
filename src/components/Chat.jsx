@@ -6,7 +6,7 @@ import { createSocketConnection } from '../utils/socket';
 let socket;
 
 const Chat = () => {
-  const { connectionId } = useParams(); // ✅ connection._id from URL
+  const { connectionId } = useParams();
   const user = useSelector((store) => store.user);
   const userId = user?._id;
 
@@ -24,7 +24,7 @@ const Chat = () => {
     socket = createSocketConnection();
 
     socket.emit('joinChat', {
-      room: connectionId, // ✅ use connection._id as room
+      room: connectionId,
       userId,
       firstName: user?.firstName,
     });
@@ -65,21 +65,25 @@ const Chat = () => {
   };
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-gray-900">
-      <div className="bg-indigo-600 text-white text-center py-4 font-semibold text-lg shadow-md">
+    <div className="w-screen h-screen flex flex-col bg-[#0b0b0f] text-white">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#111113] to-[#1a1a1d] text-white text-center py-4 font-semibold text-xl tracking-wide shadow-md border-b border-[#222]">
         💬 Chat
       </div>
 
-      <div className="flex-1 p-4 space-y-3 overflow-y-auto bg-gray-800 text-white">
+      {/* Messages */}
+      <div className="flex-1 p-6 space-y-4 overflow-y-auto bg-[#0f0f14]">
         {messages.map((msg, index) => {
           const isUser = msg.sender?.toString() === userId?.toString();
           return (
             <div
               key={index}
-              className={`max-w-[80%] px-4 py-2 rounded-xl break-words ${
+              className={`max-w-[75%] px-5 py-3 rounded-2xl text-sm md:text-base shadow-sm ${
                 isUser
-                  ? 'bg-blue-600 self-end ml-auto'
-                  : 'bg-gray-700 self-start'
+                  ? 'bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white self-end ml-auto'
+                  : msg.sender === 'system'
+                  ? 'bg-[#1e1e22] text-gray-400 italic self-center text-center'
+                  : 'bg-[#22242a] text-white self-start'
               }`}
             >
               {msg.text}
@@ -88,10 +92,11 @@ const Chat = () => {
         })}
       </div>
 
-      <div className="p-4 bg-gray-900 border-t border-gray-700 flex items-center gap-2">
+      {/* Input Bar */}
+      <div className="p-4 bg-[#0b0b0f] border-t border-[#1a1a1d] flex items-center gap-3">
         <input
           type="text"
-          className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-full outline-none"
+          className="flex-1 bg-[#1a1a1d] text-white px-4 py-2 rounded-full outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-500 transition"
           placeholder="Type your message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
@@ -99,7 +104,7 @@ const Chat = () => {
         />
         <button
           onClick={handleSend}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full transition"
+          className="bg-gradient-to-tr from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white px-5 py-2 rounded-full transition shadow-md"
         >
           Send
         </button>
