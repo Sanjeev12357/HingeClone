@@ -21,6 +21,16 @@ const Premium = () => {
     }
   ];
 
+  const [isPremium, setIsPremium] = React.useState(false);
+
+const verifyPremiumUser=async()=>{
+    const res=await axios.get(BASE_URL+"/premium/verify",{
+        withCredentials:true
+    });
+    if(res.data.isPremium){
+        setIsPremium(true);
+    }
+}
   const handleBuyClick=async()=>{
     const order=await axios.post(BASE_URL+"/payment/create",{
         memebershipType:"premium",
@@ -45,6 +55,7 @@ const Premium = () => {
             theme: {
                 color: "#3399cc"
             },
+            handler:verifyPremiumUser()
     }
     
     const rzp=new window.Razorpay(options);
@@ -56,7 +67,9 @@ const Premium = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black p-8">
+    <div>
+    {isPremium ? (
+        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black p-8">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent">
           Premium Features
@@ -106,6 +119,12 @@ const Premium = () => {
           </button>
         </div>
       </div>
+    </div>):(
+        <div>
+        Hello
+        </div>
+    )
+    }
     </div>
   );
 };
