@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { createSocketConnection } from '../utils/socket';
+import axios from 'axios';
+import { BASE_URL } from '../utils/constants';
 
 let socket;
 
@@ -10,16 +12,24 @@ const Chat = () => {
   const user = useSelector((store) => store.user);
   const userId = user?._id;
 
-  const [messages, setMessages] = useState([
-    {
-      text: 'Welcome to the chat! How can I assist you today?',
-      sender: 'system',
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
+    const fetchChatHistory = async () => {
+      try {
+        const res = await axios.get(`${BASE_URL}/chat/${connectionId}`, {
+          withCredentials: true,
+        });
+        setMessages(res.data);
+      } catch (err) {
+        console.error('Error fetching chat history:', err);
+      }
+    };
+
     if (!userId || !connectionId) return;
+
+    fetchChatHistory();
 
     socket = createSocketConnection();
 
