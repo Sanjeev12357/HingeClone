@@ -33,7 +33,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center space-x-2 text-blue-400 font-bold text-xl">
             <FaHeart />
-            <Link to="/">LoveLink</Link>
+            <Link to="/">LuvShuv</Link>
           </div>
 
           {/* Desktop Navigation */}
