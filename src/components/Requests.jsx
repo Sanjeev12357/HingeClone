@@ -55,15 +55,9 @@ const Requests = () => {
             key={_id}
             className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#0d0d0d] border border-[#1f1f1f] p-6 rounded-2xl shadow-lg hover:shadow-indigo-500/10 transition mb-6"
           >
-            <div className="flex-shrink-0">
-              <img
-                alt="User"
-                className="w-20 h-20 rounded-full object-cover border-2 border-indigo-600"
-                src={photoUrl}
-              />
-            </div>
+            
             <div className="flex-1 text-left">
-              <h2 className="text-2xl font-semibold text-white">{firstName + " " + lastName}</h2>
+              <h2 className="text-2xl font-semibold text-white">{firstName + " " }</h2>
               {age && gender && <p className="text-gray-400 text-sm">{age + ", " + gender}</p>}
               <p className="text-gray-300 mt-1 text-sm">{about}</p>
             </div>
