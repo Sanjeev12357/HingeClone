@@ -31,7 +31,7 @@ const Connections = () => {
 
   useEffect(() => {
     fetchConnections();
-  }, []);
+  }, [user]);
 
   const handleChatClick = (e) => {
     if (!currentUser?.isPremium) {
