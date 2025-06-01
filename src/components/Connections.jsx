@@ -1,14 +1,22 @@
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { addConnection } from "../utils/connectionSlice";
 
 const Connections = () => {
   const connections = useSelector((store) => store.connection);
   const currentUser = useSelector((store) => store.user);
   const dispatch = useDispatch();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const navigate=useNavigate();
+
+  const handleUpgrade = () => {
+    setShowPremiumModal(false);
+    navigate("/premium");
+  };
+  
 
   const fetchConnections = async () => {
     try {
@@ -24,6 +32,13 @@ const Connections = () => {
   useEffect(() => {
     fetchConnections();
   }, []);
+
+  const handleChatClick = (e) => {
+    if (!currentUser?.isPremium) {
+      e.preventDefault();
+      setShowPremiumModal(true);
+    }
+  };
 
   if (!connections) return null;
 
@@ -99,14 +114,26 @@ const Connections = () => {
 
                     {/* Chat Button */}
                     <div className="shrink-0">
-                      <Link to={`/chat/${connection?._id}`}>
-                        <button className="relative inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 text-white font-semibold rounded-xl hover:from-red-500 hover:via-pink-500 hover:to-purple-500 transform hover:scale-105 transition-all duration-300 shadow-lg border border-pink-500/30">
+                      {currentUser?.isPremium ? (
+                        <Link to={`/chat/${connection?._id}`}>
+                          <button className="relative inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 text-white font-semibold rounded-xl hover:from-red-500 hover:via-pink-500 hover:to-purple-500 transform hover:scale-105 transition-all duration-300 shadow-lg border border-pink-500/30">
+                            Chat Now
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </button>
+                        </Link>
+                      ) : (
+                        <button 
+                          onClick={handleChatClick}
+                          className="relative inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 text-white font-semibold rounded-xl hover:from-red-500 hover:via-pink-500 hover:to-purple-500 transform hover:scale-105 transition-all duration-300 shadow-lg border border-pink-500/30"
+                        >
                           Chat Now
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                           </svg>
                         </button>
-                      </Link>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -115,6 +142,39 @@ const Connections = () => {
           })}
         </div>
       </div>
+
+      {/* Premium Modal */}
+      {showPremiumModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 max-w-md w-full border border-gray-800 shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-4">Premium Feature</h3>
+              <p className="text-gray-300 mb-8 leading-relaxed">
+                Chat feature is only available for premium users. Upgrade to premium to unlock unlimited messaging with your connections.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowPremiumModal(false)}
+                  className="flex-1 py-3 px-6 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors duration-200 font-semibold"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleUpgrade()}
+                  className="flex-1 py-3 px-6 bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white rounded-xl transition-all duration-200 font-semibold"
+                >
+                  Upgrade Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
