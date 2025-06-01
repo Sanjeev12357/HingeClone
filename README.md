@@ -41,7 +41,7 @@ Welcome to **LuvShuv** — a modern dating platform built to spark real connecti
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/luvshuv.git
+git clone https://github.com/Sanjeev12357/luvshuv.git
 cd luvshuv
 
 # Install dependencies
