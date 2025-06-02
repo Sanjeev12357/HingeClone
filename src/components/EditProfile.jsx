@@ -152,8 +152,8 @@ export default function EditProfile() {
 
   return (
     <div className='flex px-10 justify-center gap-[20px] bg-black'>
-      <div className="w-1/2 p-6 bg-gray-900 rounded-lg shadow-xl border border-gray-800 text-gray-200">
-        <h1 className="text-2xl font-bold mb-6 text-center text-blue-400">Edit Your Profile</h1>
+      <div className="w-1/2 bg-gradient-to-br from-gray-950 to-black p-10 rounded-3xl shadow-2xl border border-gray-800  backdrop-blur-sm">
+        <h1 className="text-2xl font-bold mb-6 text-center text-white">Edit Your Profile</h1>
         
         {successMessage && (
           <div className="mb-4 p-3 bg-green-900 text-green-300 rounded border border-green-700">
@@ -339,7 +339,7 @@ export default function EditProfile() {
         </form>
       </div>
 
-      <div className="min-h-screen w-1/2 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-4 py-8">
+      <div className="min-h-screen w-1/2 flex flex-col items-center justify-center bg-gradient-to-br from-gray-950 to-black p-10 rounded-3xl shadow-2xl border border-gray-800 text-center backdrop-blur-sm  px-4 py-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={current?._id || 'preview'}
@@ -352,7 +352,7 @@ export default function EditProfile() {
             {/* Profile Header */}
             <div className="relative">
               {/* Cover Image/Background */}
-              <div className="h-32 bg-gradient-to-r from-blue-800 to-indigo-900"></div>
+              <div className="h-32 bg-gradient-to-r  from-red-900/50 via-purple-900/50 to-red-900/50 relative"></div>
               
               {/* Profile Image */}
               <div className="absolute left-1/2 transform -translate-x-1/2 -bottom-16">
