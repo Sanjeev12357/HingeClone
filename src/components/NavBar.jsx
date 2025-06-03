@@ -80,12 +80,10 @@ const Navbar = () => {
           {/* User Info */}
           <div className="hidden md:flex items-center space-x-4">
             <span className="text-sm font-medium text-gray-300">
-              {user?.firstName || "Guest"}
+              {user?.firstName || ""}
             </span>
 
-            <button className="p-2 hover:bg-gray-800 rounded-full transition text-gray-300">
-              <FiSearch />
-            </button>
+           
 
             <div className="relative group">
               {user?.photoUrl ? (
@@ -96,7 +94,7 @@ const Navbar = () => {
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm">
-                  ?
+                  
                 </div>
               )}
 

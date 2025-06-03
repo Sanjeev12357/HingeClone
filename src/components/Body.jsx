@@ -31,9 +31,14 @@ const Body = () => {
     
     fetchUser();
   },[])
+ 
+  if(!userData) {
+    navigate('/login');
+  }
   return (
     <div>
-    <NavBar/>
+    {userData && (<NavBar/>)}
+    
     <Outlet/>
     </div>
   )
