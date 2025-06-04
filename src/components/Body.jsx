@@ -37,9 +37,15 @@ const Body = () => {
   }
   return (
     <div>
-    {userData && (<NavBar/>)}
+    {userData && (
+      <NavBar/>
+    )}
+   
+      <Outlet/>
     
-    <Outlet/>
+    
+    
+    
     </div>
   )
 }
