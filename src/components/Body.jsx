@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import NavBar from './NavBar'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { addUser } from '../utils/userSlice'
 import axios from 'axios'
@@ -32,14 +32,13 @@ const Body = () => {
     fetchUser();
   },[])
  
-  if(!userData) {
-    navigate('/login');
-  }
+ 
+ 
   return (
     <div>
-    {userData && (
-      <NavBar/>
-    )}
+    {userData && (<NavBar/>)}
+      
+    
    
       <Outlet/>
     
