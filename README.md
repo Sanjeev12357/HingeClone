@@ -1,6 +1,6 @@
 # 💘 LuvShuv – Where Love Meets Technology
 
-Welcome to **LuvShuv** — a modern dating platform built to spark real connections. Whether you're searching for romance, friendship, or simply someone to vibe with, LuvShuv brings people together with style, security, and soul. ✨
+Welcome to **LuvShuv** — a modern dating platform built to spark real connections. Whether you're searching for romance, friendship, or simply someone to vibe with, LuvShuv brings people together with style, security, and love. ✨
 
 🔗 **Live Site**: [https://dateo.devexpertz.me/](https://dateo.devexpertz.me/)
 

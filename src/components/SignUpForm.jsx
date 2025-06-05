@@ -40,7 +40,7 @@ export default function SignupForm() {
     { id: 5, title: "About You", required: false }
   ];
 
-  const totalSteps = steps.length;
+  const totalSteps = steps.length+1;
 
   // Form validation functions
   const validateEmail = (email) => {
