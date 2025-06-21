@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Save, X, PlusCircle, Trash2 } from 'lucide-react';
+import { Save, X, PlusCircle, Upload, Camera, User, Calendar, Mail, FileText, Award } from 'lucide-react';
 import axios from 'axios';
 import { BASE_URL } from '../utils/constants';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUser } from '../utils/userSlice';
-import { Heart, Zap, User, MapPin, Calendar, Star } from 'lucide-react';
+import { Heart, Zap, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function EditProfile() {
   const user = useSelector((store) => store.user);
   const dispatch = useDispatch();
   const current = user;
   
-  // Initialize with empty values first
   const [profile, setProfile] = useState({
     firstName: '',
     lastName: '',
@@ -23,7 +24,13 @@ export default function EditProfile() {
     photoUrl: ''
   });
   
-  // Update profile when user data changes in Redux
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadMethod, setUploadMethod] = useState('url');
+  const [newSkill, setNewSkill] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState('');
+
   useEffect(() => {
     if (user) {
       setProfile({
@@ -35,13 +42,9 @@ export default function EditProfile() {
         gender: user.gender || '',
         photoUrl: user.photoUrl || ''
       });
+      setPreviewUrl(user.photoUrl || '');
     }
-  }, [user]); // This will run whenever the user object changes
-  
-  const [newSkill, setNewSkill] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -49,6 +52,63 @@ export default function EditProfile() {
       ...profile,
       [name]: value
     });
+
+    if (name === 'photoUrl') {
+      setPreviewUrl(value);
+    }
+  };
+
+  // Handle file selection for Cloudinary upload
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, GIF)');
+        return;
+      }
+
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
+      setSelectedFile(file);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload image to Cloudinary
+  const uploadImageToCloudinary = async () => {
+    if (!selectedFile) return null;
+
+    setUploadingImage(true);
+    const formDataImage = new FormData();
+    formDataImage.append('image', selectedFile);
+
+    try {
+      const response = await axios.post(`${BASE_URL}/upload/image`, formDataImage, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        withCredentials: true
+      });
+
+      toast.success('Image uploaded successfully to Cloudinary!');
+      return response.data.imageUrl;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.error('Failed to upload image to Cloudinary. Please try again.');
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const addSkill = () => {
@@ -78,17 +138,23 @@ export default function EditProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSuccessMessage('');
-    setErrorMessage('');
 
     try {
-      // Ensure age is converted to number if present
+      // Upload image to Cloudinary if file is selected
+      let imageUrl = profile.photoUrl;
+      if (uploadMethod === 'file' && selectedFile) {
+        const uploadedUrl = await uploadImageToCloudinary();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
       const updatedProfile = {
         ...profile,
+        photoUrl: imageUrl,
         age: profile.age ? parseInt(profile.age, 10) : undefined
       };
 
-      // Remove empty fields to avoid sending them in the request
       Object.keys(updatedProfile).forEach(key => {
         if (updatedProfile[key] === '' || updatedProfile[key] === undefined) {
           delete updatedProfile[key];
@@ -103,269 +169,332 @@ export default function EditProfile() {
       });
 
       if (response.status >= 200 && response.status < 300) {
-        setSuccessMessage('Profile updated successfully!');
+        toast.success('Profile updated successfully!');
         
-        // Update the Redux store with the new user data
         if (response.data?.user) {
           dispatch(updateUser(response.data.user));
         } else {
-          // If the API doesn't return updated user data, update with our local state
           dispatch(updateUser(updatedProfile));
         }
-      } else {
-        setErrorMessage(response.data?.message || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      setErrorMessage(error.response?.data?.message || 'Network error: Could not connect to server');
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // For debugging - remove in production
-  const logCurrentProfile = () => {
-    console.log('Current profile state:', profile);
-  };
-
-  // Show loading state if user data is not yet available
   if (!user) {
     return (
-      <div className="max-w-md mx-auto p-6 bg-gray-900 rounded-lg shadow-xl border border-gray-800 text-gray-200 flex justify-center items-center h-64">
-        <div className="text-blue-400">Loading profile data...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-black to-gray-900">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-16 h-16 border-4 border-red-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-400">Loading profile data...</p>
+        </div>
       </div>
     );
   }
 
-  // Pre-fill the form with sample data
-  const prefillForm = () => {
-    setProfile({
-      firstName: "Abhishek",
-      lastName: "Raj",
-      age: 25,
-      gender: "male",
-      photoUrl: "https://geographyandyou.com/images/user-profile.png",
-      about: "An enthusiastic Android Developer!",
-      skills: ["Kotlin", "jetpack", "Aws", "Cloud"]
-    });
-  };
-
   return (
-    <div className='flex px-10 justify-center gap-[20px] bg-black'>
-      <div className="w-1/2 bg-gradient-to-br from-gray-950 to-black p-10 rounded-3xl shadow-2xl border border-gray-800  backdrop-blur-sm">
-        <h1 className="text-2xl font-bold mb-6 text-center text-white">Edit Your Profile</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 flex px-4 md:px-10 justify-center gap-5 md:gap-8 py-8">
+      {/* Form Section */}
+      <div className="w-full md:w-1/2 bg-gradient-to-br from-gray-900 to-black p-6 md:p-10 rounded-3xl shadow-2xl border border-gray-800 backdrop-blur-sm">
+        <h1 className="text-3xl font-bold mb-8 text-center bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent">
+          Edit Your Profile
+        </h1>
         
-        {successMessage && (
-          <div className="mb-4 p-3 bg-green-900 text-green-300 rounded border border-green-700">
-            {successMessage}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Personal Information Section */}
+          <div className="space-y-4">
+            <h3 className="flex items-center gap-2 text-lg font-semibold bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent mb-4">
+              <User size={20} className="text-red-400" />
+              Personal Information
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent text-sm font-bold mb-2">
+                  First Name
+                </label>
+                <input
+                  name="firstName"
+                  type="text"
+                  value={profile.firstName}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent text-sm font-bold mb-2">
+                  Last Name
+                </label>
+                <input
+                  name="lastName"
+                  type="text"
+                  value={profile.lastName}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent text-sm font-bold mb-2">
+                  Age
+                </label>
+                <input
+                  name="age"
+                  type="number"
+                  value={profile.age}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
+                  min="18"
+                  max="100"
+                />
+              </div>
+              
+              <div>
+                <label className="block bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent text-sm font-bold mb-2">
+                  Gender
+                </label>
+                <select
+                  name="gender"
+                  value={profile.gender}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
           </div>
-        )}
-        
-        {errorMessage && (
-          <div className="mb-4 p-3 bg-red-900 text-red-300 rounded border border-red-700">
-            {errorMessage}
-          </div>
-        )}
-        
-        {/* Quick fill button for testing */}
-        <div className="mb-4 text-center">
-          <button 
-            type="button"
-            onClick={prefillForm}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm transition-colors"
-          >
-            Fill with Sample Data
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-blue-400 text-sm font-bold mb-2" htmlFor="firstName">
-              First Name
-            </label>
-            <input
-              id="firstName"
-              name="firstName"
-              type="text"
-              value={profile.firstName}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-blue-400 text-sm font-bold mb-2" htmlFor="lastName">
-              Last Name
-            </label>
-            <input
-              id="lastName"
-              name="lastName"
-              type="text"
-              value={profile.lastName}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-          
-          {/* Age field */}
-          <div className="mb-4">
-            <label className="block text-blue-400 text-sm font-bold mb-2" htmlFor="age">
-              Age
-            </label>
-            <input
-              id="age"
-              name="age"
-              type="number"
-              value={profile.age}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          
-          {/* Gender field */}
-          <div className="mb-4">
-            <label className="block text-blue-400 text-sm font-bold mb-2" htmlFor="gender">
-              Gender
-            </label>
-            <select
-              id="gender"
-              name="gender"
-              value={profile.gender}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          
-          {/* Photo URL field */}
-          <div className="mb-4">
-            <label className="block text-blue-400 text-sm font-bold mb-2" htmlFor="photoUrl">
-              Profile Photo URL
-            </label>
-            <input
-              id="photoUrl"
-              name="photoUrl"
-              type="text"
-              value={profile.photoUrl}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="https://example.com/your-photo.jpg"
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-blue-400 text-sm font-bold mb-2" htmlFor="about">
-              About Me
-            </label>
-            <textarea
-              id="about"
-              name="about"
-              value={profile.about}
-              onChange={handleInputChange}
-              rows="4"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-blue-400 text-sm font-bold mb-2">
-              Skills
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.skills && profile.skills.length > 0 ? (
-                profile.skills.map((skill, index) => (
-                  <div 
-                    key={index} 
-                    className="bg-gray-800 border border-blue-700 text-blue-400 px-3 py-1 rounded-full flex items-center"
-                  >
-                    <span>{skill}</span>
-                    <button 
-                      type="button" 
-                      onClick={() => removeSkill(skill)}
-                      className="ml-2 text-blue-400 hover:text-red-400 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
+
+          {/* Profile Picture Section */}
+          <div className="space-y-4">
+            <h3 className="flex items-center gap-2 text-lg font-semibold bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent mb-4">
+              <Camera size={20} className="text-red-400" />
+              Profile Picture
+            </h3>
+            
+            <div className="flex gap-6 mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="url"
+                  checked={uploadMethod === 'url'}
+                  onChange={(e) => setUploadMethod(e.target.value)}
+                  className="accent-red-500"
+                />
+                <span className="text-gray-300 font-medium">URL</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="file"
+                  checked={uploadMethod === 'file'}
+                  onChange={(e) => setUploadMethod(e.target.value)}
+                  className="accent-red-500"
+                />
+                <span className="text-gray-300 font-medium">Upload to Cloudinary</span>
+              </label>
+            </div>
+
+            {uploadMethod === 'url' ? (
+              <div>
+                <label className="block bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent text-sm font-bold mb-2">
+                  Profile Picture URL
+                </label>
+                <input
+                  name="photoUrl"
+                  type="url"
+                  value={profile.photoUrl}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
+                  placeholder="https://example.com/your-photo.jpg"
+                />
+              </div>
+            ) : (
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label 
+                  htmlFor="file-upload" 
+                  className="w-full border-2 border-dashed border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-red-400 transition-colors duration-300 flex flex-col items-center gap-4"
+                >
+                  <Upload size={32} className="text-gray-400" />
+                  <div>
+                    <p className="bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent font-semibold text-lg mb-2">
+                      Click to upload to Cloudinary
+                    </p>
+                    <p className="text-gray-400 text-sm">PNG, JPG, GIF up to 5MB</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-gray-500 italic">No skills added yet</div>
-              )}
-            </div>
-            <div className="flex">
-              <input
-                type="text"
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Add a skill"
-                className="flex-grow px-3 py-2 bg-gray-800 border border-gray-700 rounded-l text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                </label>
+                {selectedFile && (
+                  <p className="mt-3 text-green-400 text-sm font-medium">
+                    Selected: {selectedFile.name}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {previewUrl && (
+              <div className="text-center">
+                <p className="text-gray-400 text-sm mb-2">Preview:</p>
+                <img
+                  src={previewUrl}
+                  alt="Profile preview"
+                  className="w-24 h-24 rounded-full object-cover border-3 border-red-400 mx-auto"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    if (uploadMethod === 'url') {
+                      toast.error('Invalid image URL');
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* About Section */}
+          <div className="space-y-4">
+            <h3 className="flex items-center gap-2 text-lg font-semibold bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent mb-4">
+              <FileText size={20} className="text-red-400" />
+              About Me
+            </h3>
+            
+            <div>
+              <label className="block bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent text-sm font-bold mb-2">
+                Tell us about yourself
+              </label>
+              <textarea
+                name="about"
+                value={profile.about}
+                onChange={handleInputChange}
+                rows="4"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 resize-vertical"
+                placeholder="Share your interests, hobbies, and what makes you unique..."
               />
-              <button
-                type="button"
-                onClick={addSkill}
-                className="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700 flex items-center transition-colors"
-              >
-                <PlusCircle size={18} className="mr-1" />
-                Add
-              </button>
+            </div>
+          </div>
+
+          {/* Skills Section */}
+          <div className="space-y-4">
+            <h3 className="flex items-center gap-2 text-lg font-semibold bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent mb-4">
+              <Award size={20} className="text-red-400" />
+              Skills & Interests
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2 min-h-[60px] p-4 bg-gray-800/50 border-2 border-dashed border-gray-600 rounded-xl">
+                {profile.skills && profile.skills.length > 0 ? (
+                  profile.skills.map((skill, index) => (
+                    <div 
+                      key={index} 
+                      className="bg-gradient-to-r from-red-600 to-purple-600 text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium"
+                    >
+                      <span>{skill}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => removeSkill(skill)}
+                        className="hover:bg-white/20 rounded-full p-1 transition-colors duration-200"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-500 italic flex items-center justify-center w-full">
+                    No skills added yet
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Add a skill or interest"
+                  className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
+                />
+                <button
+                  type="button"
+                  onClick={addSkill}
+                  className="bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all duration-300 transform hover:scale-105"
+                >
+                  <PlusCircle size={18} />
+                  Add
+                </button>
+              </div>
             </div>
           </div>
           
-          <div className="flex justify-between mt-6">
+          {/* Form Actions */}
+          <div className="flex justify-between gap-4 pt-6">
             <button
               type="button"
-              className="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 flex items-center transition-colors"
+              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl font-semibold flex items-center gap-2 transition-all duration-300"
               onClick={() => window.history.back()}
             >
-              <X size={18} className="mr-1" />
+              <X size={18} />
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center transition-colors ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              disabled={isSubmitting || uploadingImage}
+              className="px-6 py-3 bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold flex items-center gap-2 transition-all duration-300 transform hover:scale-105 disabled:transform-none"
             >
-              <Save size={18} className="mr-1" />
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              <Save size={18} />
+              {isSubmitting ? 'Saving...' : uploadingImage ? 'Uploading...' : 'Save Changes'}
             </button>
           </div>
         </form>
       </div>
 
-      <div className="min-h-screen w-1/2 flex flex-col items-center justify-center bg-gradient-to-br from-gray-950 to-black p-10 rounded-3xl shadow-2xl border border-gray-800 text-center backdrop-blur-sm  px-4 py-8">
+      {/* Live Preview Section */}
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
+        <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent">
+          Live Preview
+        </h2>
+        
         <AnimatePresence mode="wait">
           <motion.div
-            key={current?._id || 'preview'}
+            key={previewUrl || 'preview'}
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="bg-gray-800 rounded-2xl shadow-xl max-w-sm w-full overflow-hidden border border-gray-700"
+            className="bg-gradient-to-br from-gray-900 to-black rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-gray-800"
           >
             {/* Profile Header */}
             <div className="relative">
-              {/* Cover Image/Background */}
-              <div className="h-32 bg-gradient-to-r  from-red-900/50 via-purple-900/50 to-red-900/50 relative"></div>
+              <div className="h-32 bg-gradient-to-r from-red-600 to-purple-600 relative"></div>
               
-              {/* Profile Image */}
               <div className="absolute left-1/2 transform -translate-x-1/2 -bottom-16">
-                <div className="p-1 bg-gray-800 rounded-full">
-                  <div className="p-1 bg-gradient-to-r from-blue-500 to-blue-700 rounded-full">
-                    {profile.photoUrl ? (
+                <div className="p-1 bg-black rounded-full">
+                  <div className="p-1 bg-gradient-to-r from-red-500 to-purple-600 rounded-full">
+                    {previewUrl ? (
                       <img
-                        src={profile.photoUrl}
+                        src={previewUrl}
                         alt={`${profile.firstName} ${profile.lastName}`}
-                        className="w-36 h-32 rounded-full object-center"
+                        className="w-28 h-28 rounded-full object-cover border-2 border-black"
                       />
                     ) : (
-                      <div className="w-28 h-28 rounded-full bg-gray-700 flex items-center justify-center text-3xl font-bold text-blue-400">
+                      <div className="w-28 h-28 rounded-full bg-gray-700 flex items-center justify-center text-2xl font-bold bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent border-2 border-black">
                         {profile.firstName?.[0]}{profile.lastName?.[0]}
                       </div>
                     )}
@@ -376,74 +505,89 @@ export default function EditProfile() {
 
             {/* Profile Details */}
             <div className="pt-20 pb-6 px-6">
-              <h2 className="text-center text-2xl font-bold text-gray-100 mb-1">
+              <h2 className="text-center text-2xl font-bold bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent mb-2">
                 {profile.firstName} {profile.lastName}
               </h2>
               
-              <p className="text-center text-blue-400 text-sm mb-4 flex items-center justify-center">
-                <Star size={14} className="mr-1" />
-                {current?.emailId || "user@example.com"}
+              <p className="text-center text-sm mb-4 flex items-center justify-center gap-1">
+                <Star size={14} className="text-purple-400" />
+                <span className="bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent font-medium">
+                  {current?.emailId || "user@example.com"}
+                </span>
               </p>
               
-              {/* Age and Gender */}
               <div className="flex justify-center mb-4 gap-4">
                 {profile.age && (
-                  <p className="text-center text-gray-300 text-sm flex items-center">
-                    <Calendar size={14} className="mr-1 text-blue-400" />
+                  <p className="text-center text-gray-300 text-sm flex items-center gap-1">
+                    <Calendar size={14} className="text-purple-400" />
                     {profile.age} years
                   </p>
                 )}
                 {profile.gender && (
-                  <p className="text-center text-gray-300 text-sm flex items-center">
-                    <User size={14} className="mr-1 text-blue-400" />
+                  <p className="text-center text-gray-300 text-sm flex items-center gap-1">
+                    <User size={14} className="text-purple-400" />
                     {profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)}
                   </p>
                 )}
               </div>
               
-              <div className="bg-gray-900 p-4 rounded-xl mb-5">
+              <div className="bg-gray-950 p-4 rounded-xl mb-5 border border-gray-800">
                 <p className="text-center text-gray-300 text-sm leading-relaxed">
                   {profile.about || "No profile description available"}
                 </p>
               </div>
 
-              {/* Skills/Interests */}
               {profile.skills?.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-blue-400 text-xs uppercase font-semibold mb-2 ml-1">Interests</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((skill, i) => (
+                  <h3 className="bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent text-xs uppercase font-bold mb-3 text-center tracking-wider">
+                    Interests
+                  </h3>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {profile.skills.slice(0, 6).map((skill, i) => (
                       <span 
                         key={i} 
-                        className="text-xs bg-gray-900 text-blue-400 px-3 py-1 rounded-full border border-gray-700"
+                        className="text-xs bg-gray-950 border border-gray-800 px-3 py-1 rounded-full bg-gradient-to-r from-red-400 to-purple-500 bg-clip-text text-transparent font-medium"
                       >
                         {skill}
                       </span>
                     ))}
+                    {profile.skills.length > 6 && (
+                      <span className="text-xs bg-gray-950 border border-gray-800 px-3 py-1 rounded-full text-gray-400">
+                        +{profile.skills.length - 6} more
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex justify-between items-center pt-2">
-                <button
-                  className="flex-1 py-3 mr-2 bg-gray-900 hover:bg-gray-700 rounded-xl transition duration-300 flex items-center justify-center border border-gray-700"
-                >
-                  <Heart size={20} className="text-red-400 mr-2" />
-                  <span className="text-gray-300 font-medium">Like</span>
+              <div className="flex justify-between items-center pt-2 gap-3">
+                <button className="flex-1 py-3 bg-gray-950 hover:bg-gray-900 rounded-xl transition-all duration-300 flex items-center justify-center border border-gray-800 group">
+                  <Heart size={18} className="text-red-400 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent font-semibold">Like</span>
                 </button>
                 
-                <button
-                  className="flex-1 py-3 ml-2 bg-blue-600 hover:bg-blue-700 rounded-xl transition duration-300 flex items-center justify-center"
-                >
-                  <Zap size={20} className="text-white mr-2" />
-                  <span className="text-white font-medium">Connect</span>
+                <button className="flex-1 py-3 bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 rounded-xl transition-all duration-300 flex items-center justify-center group">
+                  <Zap size={18} className="text-white mr-2 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="text-white font-semibold">Connect</span>
                 </button>
               </div>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 }
