@@ -11,60 +11,81 @@ import Connections from './components/Connections'
 import Requests from './components/Requests'
 import Premium from './components/Premium'
 import Chat from './components/Chat'
+import ProtectedRoute from './utils/ProtectedRoute'
 
 function App() {
- 
-
   return (
-    <>
     <Provider store={appStore}>
-    
-      <BrowserRouter basename='/' >
+      <BrowserRouter basename='/'>
         <Routes>
-          <Route
-          path='/'
-          element={<Body/>}
-          >
-          <Route
-          path='/'
-          element={<Feed/>}
-          />
-          <Route
-          path='/login'
-          element={<Login/>}
-          />
-          <Route
-          path="/signup"
-          element={<SignupForm/>}
-          />
-
-          <Route
-          element={<Profile/>}
-          path='/profile'
-          />
-          <Route
-          path="/connections"
-          element={<Connections/>}
-          />
-          <Route
-          path="requests"
-          element={<Requests/>}
-          />
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignupForm />} />
           
+          {/* Protected routes - each wrapped individually */}
           <Route
-          path="/premium"
-          element={<Premium/>}
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Body>
+                  <Feed />
+                </Body>
+              </ProtectedRoute>
+            }
           />
           <Route
-          path="/chat/:connectionId"
-          element={<Chat/>}
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Body>
+                  <Profile />
+                </Body>
+              </ProtectedRoute>
+            }
           />
-          </Route>
+          <Route
+            path="/connections"
+            element={
+              <ProtectedRoute>
+                <Body>
+                  <Connections />
+                </Body>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/requests"
+            element={
+              <ProtectedRoute>
+                <Body>
+                  <Requests />
+                </Body>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/premium"
+            element={
+              <ProtectedRoute>
+                <Body>
+                  <Premium />
+                </Body>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat/:connectionId"
+            element={
+              <ProtectedRoute>
+                <Body>
+                  <Chat />
+                </Body>
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
-      </Provider>
-     
-    </>
+    </Provider>
   )
 }
 

@@ -11,6 +11,7 @@ import { removeUser } from "../utils/userSlice";
 const Navbar = () => {
   const [isMobile, setIsMobile] = useState(false);
   const user = useSelector((store) => store.user);
+  console.log("User in Navbar:", user);
 
   const toggleMobileMenu = () => setIsMobile(!isMobile);
   const dispatch = useDispatch();
@@ -25,6 +26,8 @@ const Navbar = () => {
       console.error("Logout failed", error);
     }
   };
+
+
 
   return (
    <header className="bg-neutral-900 text-white shadow-md">
